@@ -22,7 +22,7 @@ The final project for Introduction of Computer Graphic in NYCU
 | :-: | --- |
 | Q | 鬼靈精怪！（切換武器） |
 | W | 咻咻！（發射衝擊波） |
-| E | 咬咬手榴彈！（投擲手榴彈) |
+| E | 咬咬手榴彈！（投擲手榴彈） |
 | R | 超威能死亡火箭！（釋放火箭炮） |
 | A | 普攻（會根據當前武器射出不同子彈） |
 
@@ -43,4 +43,6 @@ The final project for Introduction of Computer Graphic in NYCU
 | slash `/` | 視角向右平移 |
 | L | 視角向前平移 |
 | period `.` | 視角向後平移 |
+　也就是鍵盤上的這些按鍵
+![alt text](image.png)
 | P | 將視角恢復到初始位置 |
