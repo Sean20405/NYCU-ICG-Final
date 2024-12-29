@@ -118,6 +118,15 @@ bool shootW = false;
 float w_cnt = 0;
 int w_cnt_start1 = 13;
 int w_cnt_start2 = 30;
+glm::vec3 acclerateE = glm::vec3(0.0f, -50.0f, 0.0f);
+float velX = 8.0f;
+float velY = 20.0f;
+float velZ = 20.0f;
+std::vector<glm::vec3> velocitiesE = {
+    glm::vec3(0.0f, velY, velZ),
+    glm::vec3(velX, velY, velZ),
+    glm::vec3(-velX, velY, velZ)
+};
 
 // E (Bomb)
 float e_explosion_countdown = 2;  // After this, E will start to explode
@@ -355,16 +364,16 @@ void setup(){
 void update(){
 // Update the heicopter position, camera position, rotation, etc.
 
-    // Bump
+    // Bomb
     for (int i = 0; i < bombs.size(); i++) {
-        bombs[i].velocity += bombs[i].acceleration * deltaTime;
-        bombs[i].position += bombs[i].velocity * deltaTime;
+        bombs[i].velocity += bombs[i].acceleration * deltaTime * (timeCoef * !stop);
+        bombs[i].position += bombs[i].velocity * deltaTime * (timeCoef * !stop);
 
         if (bombs[i].position.y <= 0.0f) {  // Hit the ground, start to explode
             bombs[i].velocity = glm::vec3(0.0f);
             bombs[i].acceleration = glm::vec3(0.0f);
             bombs[i].position.y = 0.0f;
-            bombs[i].explodeTime += deltaTime * timeCoef;
+            bombs[i].explodeTime += deltaTime * timeCoef * !stop;
             
             if (bombs[i].explodeTime > e_explosion_time) {  // Delete the bomb after this time
                 bombs.erase(bombs.begin() + i);
@@ -419,11 +428,7 @@ void update(){
     cameraModel = glm::mat4(1.0f);
     cameraModel = glm::translate(cameraModel, currentLook);
     cameraModel = glm::rotate(cameraModel, glm::radians(camera.rotationY), camera.up);
-    // glm::vec3 left = glm::normalize(glm::cross(camera.up, currentLook - glm::vec3(cameraModel[3])));
     glm::vec3 left = glm::normalize(glm::cross(camera.up, currentLook - camera.position));
-    cout << "camera.up: " << camera.up.x << " " << camera.up.y << " " << camera.up.z << endl;
-    cout << "currentLook: " << currentLook.x << " " << currentLook.y << " " << currentLook.z << endl;
-    cout << "left: " << left.x << " " << left.y << " " << left.z << endl;
     cameraModel = glm::rotate(cameraModel, glm::radians(camera.rotationX), left);
     cameraModel = glm::translate(cameraModel, -currentLook);
     cameraModel = glm::translate(cameraModel, camera.position);
@@ -433,8 +438,8 @@ void update(){
         for(int i = 0; i < bulletsInfo[j].size(); i++){
             // Stop moving, explode
             if(bulletsInfo[j][i].position.z > 50.0){
-                bulletsInfo[j][i].explodeTime += deltaTime * timeCoef;
-                cout << bulletsInfo[j][i].explodeTime << endl;
+                bulletsInfo[j][i].explodeTime += deltaTime * timeCoef * !stop;
+                // cout << bulletsInfo[j][i].explodeTime << endl;
                 if (bulletsInfo[j][i].explodeTime > 0.5) {  // Delete the bullet after exploding for 0.5s
                     bulletsInfo[j].erase(bulletsInfo[j].begin() + i);
                     i--;
@@ -442,7 +447,7 @@ void update(){
             }
             else {
                 if(!stop){
-                    bulletsInfo[j][i].position += glm::vec3(0.0, 0.0, 0.5) * timeCoef;
+                    bulletsInfo[j][i].position += glm::vec3(0.0, 0.0, 0.5) * (timeCoef * !stop);
                 }
             }
         }
@@ -459,25 +464,23 @@ void update(){
 
     // R
     if(skillIdx == 'R' && bulletIdx == 2 && ult_cnt > 0){
-        ult_cnt -= (timeCoef + 1e-5);
+        ult_cnt -= (timeCoef + 1e-5) * !stop;
         if(ult_cnt < 0){
             // shoot R
             ult_cnt = 0;
             bulletsInfo[bulletIdx].push_back(bullet_t{jinx[0].position + glm::vec3(-6.0, 18.0, 12.0), 0.0});
         }
-        cout << "ult_cnt: " << ult_cnt << endl;
     }
 
     // W
     if(skillIdx == 'W' && ult_cnt > 0){
-        ult_cnt -= (timeCoef + 1e-5);
+        ult_cnt -= (timeCoef + 1e-5) * !stop;
         if(ult_cnt < 0){
             // shoot W
             shootW = true;
             w_cnt = w_cnt_start2;
             ult_cnt = 0;
         }
-        cout << "ult_cnt: " << ult_cnt << endl;
     }
 }
 
@@ -601,22 +604,21 @@ void render(){
         wCubeModel = glm::scale(wCubeModel, glm::vec3(3.0f, 0.5f, cur_len*4));
         shaderPrograms[shaderProgramIndex]->set_uniform_value("model", wCubeModel);
         cube.object->render();
-        w_cnt -= timeCoef * 1;
+        w_cnt -= timeCoef * 1 * !stop;
         if(w_cnt < 0){
             shootW = false;
         }
     }
 
     // Render a cube at currentLook position
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 redCubeModel = glm::mat4(1.0f);
-    redCubeModel = glm::translate(redCubeModel, currentLook);
-    redCubeModel = glm::scale(redCubeModel, glm::vec3(1.0f, 1.0f, 1.0f));
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("model", redCubeModel);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
-    cube.object->render();
+    // shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
+    // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.0f, 0.0f));
+    // glm::mat4 redCubeModel = glm::mat4(1.0f);
+    // redCubeModel = glm::translate(redCubeModel, currentLook);
+    // redCubeModel = glm::scale(redCubeModel, glm::vec3(1.0f, 1.0f, 1.0f));
+    // shaderPrograms[shaderProgramIndex]->set_uniform_value("model", redCubeModel);
+    // shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
+    // cube.object->render();
 
     shaderPrograms[shaderProgramIndex]->release();
 
@@ -702,59 +704,57 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     // if (key == GLFW_KEY_1 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
     //     shaderProgramIndex = 1;
 
-    if (key == GLFW_KEY_Q && (action == GLFW_REPEAT || action == GLFW_PRESS)){
-        if(skillIdx == 'Q'){
+    if(!stop){
+        if (key == GLFW_KEY_Q && (action == GLFW_REPEAT || action == GLFW_PRESS)){
+            if(skillIdx == 'Q'){
+                skillIdx = 'R';
+                bulletIdx = 0;
+            }
+            else{
+                skillIdx = 'Q';
+                bulletIdx = 1;
+            }
+            turn = true;
+            inverse = 1;
+            handRoate = 0.0f;
+        }
+        if (key == GLFW_KEY_W && (action == GLFW_REPEAT || action == GLFW_PRESS)){
+            skillIdx = 'W';
+            turn = true;
+            inverse = 1;
+            handRoate = 0.0f;
+            ult_cnt = w_cnt_start1;
+        }
+        if (key == GLFW_KEY_E && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+            turn = true;
+            inverse = -1;
+            handRoate = 0.0f;
+            ult_cnt = 0;
+            
+            for (const auto& velocity : velocitiesE) {
+                bomb_t newBomb;
+                newBomb.position = jinx[0].position + glm::vec3(-8.0f, 10.0f, 0.0f); // 初始位置從 Jinx 出發
+                newBomb.velocity = velocity;        // 不同的初速度
+                newBomb.acceleration = acclerateE; // 重力加速度
+                newBomb.object = bombObject;       // 使用同一個炸彈模型
+                newBomb.explodeTime = 0.0f;
+                bombs.push_back(newBomb);
+            }
+        }
+        if (key == GLFW_KEY_R && (action == GLFW_REPEAT || action == GLFW_PRESS)){
             skillIdx = 'R';
-            bulletIdx = 0;
+            bulletIdx = 2;
+            turn = true;
+            inverse = 1;
+            handRoate = 0.0f;
+            ult_cnt = ult_cnt_start;
         }
-        else{
-            skillIdx = 'Q';
-            bulletIdx = 1;
-        }
-        turn = true;
-        inverse = 1;
-        handRoate = 0.0f;
-    }
-    if (key == GLFW_KEY_W && (action == GLFW_REPEAT || action == GLFW_PRESS)){
-        skillIdx = 'W';
-        turn = true;
-        inverse = 1;
-        handRoate = 0.0f;
-        ult_cnt = w_cnt_start1;
-    }
-    if (key == GLFW_KEY_E && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        turn = true;
-        inverse = -1;
-        handRoate = 0.0f;
-        std::vector<glm::vec3> velocities = {
-            glm::vec3(0.0f, 20.0f, 10.0f),
-            glm::vec3(10.0f, 20.0f, 10.0f),
-            glm::vec3(-10.0f, 20.0f, 10.0f)
-        };
-        
-        for (const auto& velocity : velocities) {
-            bomb_t newBomb;
-            newBomb.position = jinx[0].position + glm::vec3(-8.0f, 10.0f, 0.0f); // 初始位置從 Jinx 出發
-            newBomb.velocity = velocity;        // 不同的初速度
-            newBomb.acceleration = glm::vec3(0.0f, -15.0f, 0.0f); // 重力加速度
-            newBomb.object = bombObject;       // 使用同一個炸彈模型
-            newBomb.explodeTime = 0.0f;
-            bombs.push_back(newBomb);
-        }
-    }
-    if (key == GLFW_KEY_R && (action == GLFW_REPEAT || action == GLFW_PRESS)){
-        skillIdx = 'R';
-        bulletIdx = 2;
-        turn = true;
-        inverse = 1;
-        handRoate = 0.0f;
-        ult_cnt = ult_cnt_start;
-    }
 
-    if (key == GLFW_KEY_A && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        fire = true;
-    if (key == GLFW_KEY_T && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        shootTime = !shootTime;
+        if (key == GLFW_KEY_A && (action == GLFW_REPEAT || action == GLFW_PRESS))
+            fire = true;
+        if (key == GLFW_KEY_T && (action == GLFW_REPEAT || action == GLFW_PRESS))
+            shootTime = !shootTime;
+    }
     if (key == GLFW_KEY_SPACE && (action == GLFW_REPEAT || action == GLFW_PRESS))
         stop = !stop;
     
@@ -771,7 +771,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     
     // 中心點 左右平移
     glm::vec3 left = glm::normalize(glm::cross(camera.up, currentLook - glm::vec3(cameraModel[3])));
-    cout << "left: " << left.x << " " << left.y << " " << left.z << endl;
     if (key == GLFW_KEY_COMMA && (action == GLFW_REPEAT || action == GLFW_PRESS)){
         camera.position = glm::vec3(cameraModel[3]) + cameraSpeed * left;
         camera.rotationY = 0;
@@ -797,10 +796,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         camera.rotationY = 0;
         camera.rotationX = 0;
     }
-    // cout << "currentLook: " << currentLook.x << " " << currentLook.y << " " << currentLook.z << endl;
-    // cout << "camera.position: " << camera.position.x << " " << camera.position.y << " " << camera.position.z << endl;
-    // cout << "camera.rotationY: " << camera.rotationY << endl;
-    cout << "camera.rotationX: " << camera.rotationX << endl;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
