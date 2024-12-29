@@ -1,6 +1,21 @@
 # NYCU-ICG-Final
 The final project for Introduction of Computer Graphic in NYCU
 
+## 如何執行
+### Requirements
+- G++
+- CMake
+- VS Code (with CMake Tools extension)
+
+### How to run
+- Clone this repo (with `--recursive` to clone submodule as well)
+    ```bash
+    git clone --recursive https://github.com/Sean20405/NYCU-ICG-Final
+    ```
+- Using VS Code to open the folder
+- Setting Compiler in VS Code
+- Press the Run button in the bottom left corner in VS Code
+
 ## 操作
 ### 技能
 | 按鍵 | 效果 |
