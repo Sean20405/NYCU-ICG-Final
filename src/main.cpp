@@ -347,6 +347,8 @@ void setup(){
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
 
     // Debug: enable for debugging
     glEnable(GL_DEBUG_OUTPUT);
@@ -550,6 +552,7 @@ void render(){
 
             if (bulletsInfo[j][i].explodeTime > 0.0) {
                 shaderPrograms[shaderProgramIndex]->set_uniform_value("time", bulletsInfo[j][i].explodeTime);
+                shaderPrograms[shaderProgramIndex]->set_uniform_value("aExplosionColor", glm::vec3(0.7f, 0.7f, 0.7f));
                 bullet[j].object->render();
             }
             else {
@@ -568,6 +571,7 @@ void render(){
             bombModel = glm::scale(bombModel, glm::vec3(0.5f));
             
             shaderPrograms[shaderProgramIndex]->set_uniform_value("time", bomb.explodeTime - e_explosion_countdown);
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("aExplosionColor", glm::vec3(0.8f, 0.4f, 0.0f));
         }
         else if (bomb.explodeTime > 0.0) {
             // Rotate and jump according to the time
