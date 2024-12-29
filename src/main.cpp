@@ -47,6 +47,7 @@ struct bomb_t {
     glm::vec3 velocity;
     glm::vec3 acceleration;
     Object* object;
+    float explodeTime;  // time to explode
 };
 Object* bombObject;
 std::vector<bomb_t> bombs;
@@ -116,6 +117,13 @@ bool shootW = false;
 float w_cnt = 0;
 int w_cnt_start1 = 13;
 int w_cnt_start2 = 30;
+
+// E (bomb)
+float e_explosion_countdown = 2;  // After this, E will start to explode
+float e_explosion_time = 2.5;  // After this, E will stop exploding and disappear
+float num_turns = 1.5;  // Number of turns of the bomb before exploding
+float jump_height = 2.0;  // Height of the bomb when it jumps
+float num_jumps = 1.5;  // Number of jumps of the bomb before exploding
 
 //////////////////////////////////////////////////////////////////////////
 // Parameter setup, 
@@ -350,11 +358,16 @@ void update(){
         bombs[i].velocity += bombs[i].acceleration * deltaTime;
         bombs[i].position += bombs[i].velocity * deltaTime;
 
-        if (bombs[i].position.y <= 0.0f) {
+        if (bombs[i].position.y <= 0.0f) {  // Hit the ground, start to explode
             bombs[i].velocity = glm::vec3(0.0f);
             bombs[i].acceleration = glm::vec3(0.0f);
             bombs[i].position.y = 0.0f;
-            continue;
+            bombs[i].explodeTime += deltaTime;
+            
+            if (bombs[i].explodeTime > e_explosion_time) {  // Delete the bomb after this time
+                bombs.erase(bombs.begin() + i);
+                i--;
+            }
         }
     }
 
@@ -535,10 +548,32 @@ void render(){
     // Render bombs
     for (const auto& bomb : bombs) {
         glm::mat4 bombModel = glm::mat4(1.0f);
-        bombModel = glm::translate(bombModel, bomb.position);
-        bombModel = glm::scale(bombModel, glm::vec3(0.5f));   // 縮小到 50%
+        
+        if (bomb.explodeTime > e_explosion_countdown) {
+            bombModel = glm::translate(bombModel, bomb.position);
+            bombModel = glm::scale(bombModel, glm::vec3(0.5f));
+            
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", bomb.explodeTime - e_explosion_countdown);
+        }
+        else if (bomb.explodeTime > 0.0) {
+            // Rotate and jump according to the time
+            float angle = 360.0 * num_turns * bomb.explodeTime / e_explosion_countdown;
+            float height = max(0.0, jump_height * sin(num_jumps * 2 * M_PI * bomb.explodeTime));
+            bombModel = glm::translate(bombModel, bomb.position + glm::vec3(0.0f, height, 0.0f));
+            bombModel = glm::rotate(bombModel, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+            bombModel = glm::scale(bombModel, glm::vec3(0.5f));
+
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
+        }
+        else {
+            bombModel = glm::translate(bombModel, bomb.position);
+            bombModel = glm::scale(bombModel, glm::vec3(0.5f));   // 縮小到 50%
+
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
+        }
         shaderPrograms[shaderProgramIndex]->set_uniform_value("model", bombModel);
         bomb.object->render();
+        
     }
     
     if(shootW){
@@ -569,6 +604,7 @@ void render(){
     redCubeModel = glm::translate(redCubeModel, currentLook);
     redCubeModel = glm::scale(redCubeModel, glm::vec3(1.0f, 1.0f, 1.0f));
     shaderPrograms[shaderProgramIndex]->set_uniform_value("model", redCubeModel);
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
     cube.object->render();
 
     shaderPrograms[shaderProgramIndex]->release();
@@ -691,6 +727,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
             newBomb.velocity = velocity;        // 不同的初速度
             newBomb.acceleration = glm::vec3(0.0f, -15.0f, 0.0f); // 重力加速度
             newBomb.object = bombObject;       // 使用同一個炸彈模型
+            newBomb.explodeTime = 0.0f;
             bombs.push_back(newBomb);
         }
     }
