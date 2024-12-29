@@ -7,12 +7,15 @@ in VS_OUT {
 } gs_in[];
 
 out vec2 TexCoord;
+out vec4 ExplosionColor;
+out float mixValue;
 
 uniform float time;
+uniform vec3 aExplosionColor;
 
 vec4 explode(vec4 position, vec3 normal) {
-    float magnitude = 20.0;
-    vec3 direction = normal * sin(time) * magnitude; 
+    float magnitude = 10.0;
+    vec3 direction = normal * pow(time, 0.3) * magnitude; 
     return position + vec4(direction, 0.0);
 }
 
@@ -28,6 +31,10 @@ void main() {
         for(int i = 0; i < 3; i++) {
             gl_Position = gl_in[i].gl_Position;
             TexCoord = gs_in[i].TexCoord;
+
+            ExplosionColor = vec4(aExplosionColor, min(0.0, 1.0-time*2.0));
+            mixValue = 0.0;
+
             EmitVertex();
         }
         EndPrimitive();
@@ -37,6 +44,10 @@ void main() {
         for(int i = 0; i < 3; i++) {
             gl_Position = explode(gl_in[i].gl_Position, normal);
             TexCoord = gs_in[i].TexCoord;
+
+            ExplosionColor = vec4(aExplosionColor, min(0.0, 1.0 - time * 2.0));
+            mixValue = min(1.0, time * 2.0);
+
             EmitVertex();
         }
         EndPrimitive();
