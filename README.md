@@ -1,13 +1,23 @@
 # NYCU-ICG-Final
 The final project for Introduction of Computer Graphic in NYCU
 
+> [!NOTE]
+> 
+> - Story name:《Champion Spotlight of Jinx》
+> - groupID: 1
+> - members of team：[曾紹幃](https://github.com/fakraze)、[林悦揚](https://github.com/yangerder)、[何義翔](https://github.com/Sean20405)
+
 ## 如何執行
 ### Requirements
 - G++
 - CMake
-- [Optional, but recommanded] VS Code (with CMake Tools extension)
+- [Optional, but recommanded] VS Code
 
 ### Run with VS Code (must have CMake Tools extension)
+> [!WARNING]
+>
+> Your VS Code must have CMake Tools extension already
+
 - Clone this repo (with `--recursive` to clone submodule as well)
     ```bash
     git clone --recursive https://github.com/Sean20405/NYCU-ICG-Final
