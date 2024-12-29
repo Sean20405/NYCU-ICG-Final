@@ -80,7 +80,7 @@ vector<model_t> jinxRightHand;
 
 model_t cube;
 
-model_t bullet;
+vector<model_t> bullet;
 
 // model matrix
 int moveDir = 1;
@@ -106,8 +106,16 @@ bool turn = false;
 float handRoate = 0.0f;
 int handRoateCoef = 30;
 bool fire = false;
-vector<bullet_t> bulletsInfo;  // (time, position)
+vector<vector<bullet_t>> bulletsInfo;  // (time, position)
 glm::vec3 currentLook;
+int inverse = 1;
+int bulletIdx = 1;  // 0: silver, 1: yellow
+float ult_cnt = 0;
+int ult_cnt_start = 20;
+bool shootW = false;
+float w_cnt = 0;
+int w_cnt_start1 = 13;
+int w_cnt_start2 = 30;
 
 //////////////////////////////////////////////////////////////////////////
 // Parameter setup, 
@@ -201,12 +209,26 @@ void model_setup(){
     cube.object->load_texture(textureDir + "cube_texture.jpg");
 
     // Load the bullet object
-    bullet.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    bullet.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    bullet.rotation = glm::vec3(0.0f, 0.0f, 90.0f);
-    bullet.object = new Object(objDir + "bullet.obj");
-    bullet.object->load_to_buffer();
-    bullet.object->load_texture(textureDir + "bullet_texture.png");
+    std::vector<std::string> bulletName = {
+        "bullet",  // silver
+        "bulletv2",  // yellow
+        "rocket",  // R
+    };
+    bullet.resize(bulletName.size());
+    bulletsInfo.resize(bulletName.size());
+    bullet[0].position = glm::vec3(0.0f, 0.0f, 0.0f);
+    bullet[0].scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    bullet[0].rotation = glm::vec3(0.0f, 0.0f, 90.0f);
+    for (int i = 0; i < bulletName.size(); i++) {
+        std::string modelName = bulletName[i];
+        bullet[i].object = new Object(objDir + modelName + ".obj");
+        bullet[i].object->load_to_buffer();
+        if(i == 2){
+            bullet[i].object->load_texture(textureDir + modelName + "_texture" + ".jpg");
+        }else{
+            bullet[i].object->load_texture(textureDir + modelName + "_texture" + ".png");
+        }
+    }
 }
 
 
@@ -353,10 +375,10 @@ void update(){
     // }
     // jinx[0].position.y += jinxMove * timeCoef * !stop;
 
-    int rotateSpeed = handRoateCoef * timeCoef * !stop;
+    int rotateSpeed = handRoateCoef * timeCoef * !stop * inverse;
     if(turn){
         handRoate += rotateSpeed;
-        if(handRoate > 360.0){
+        if(handRoate > 360.0 || handRoate < -360.0){
             handRoate = 0.0;
             turn = false;
         }
@@ -384,26 +406,53 @@ void update(){
     cameraModel = glm::translate(cameraModel, -currentLook);
     cameraModel = glm::translate(cameraModel, camera.position);
 
+    // cout << "bullet size: " << bulletsInfo[0].size() << " " << bulletsInfo[1].size() << endl;
     // bullets
-    for(int i = 0; i < bulletsInfo.size(); i++){
-        // Stop moving, explode
-        if(bulletsInfo[i].position.z > 50.0){
-            bulletsInfo[i].explodeTime += deltaTime;
-            cout << bulletsInfo[i].explodeTime << endl;
-            if (bulletsInfo[i].explodeTime > 0.5) {  // Delete the bullet after exploding for 0.5s
-                bulletsInfo.erase(bulletsInfo.begin() + i);
-                i--;
+    for(int j=0; j<3; j++){  // 0: silver, 1: yellow
+        for(int i = 0; i < bulletsInfo[j].size(); i++){
+            // Stop moving, explode
+            if(bulletsInfo[j][i].position.z > 50.0){
+                bulletsInfo[j][i].explodeTime += deltaTime;
+                cout << bulletsInfo[j][i].explodeTime << endl;
+                if (bulletsInfo[j][i].explodeTime > 0.5) {  // Delete the bullet after exploding for 0.5s
+                    bulletsInfo[j].erase(bulletsInfo[j].begin() + i);
+                    i--;
+                }
             }
-        }
-        else {
-            bulletsInfo[i].position += glm::vec3(0.0, 0.0, 0.5);
+            else {
+                if(!stop){
+                    bulletsInfo[j][i].position += glm::vec3(0.0, 0.0, 0.5) * timeCoef;
+                }
+            }
         }
     }
     if(fire){
         fire = false;
-        if(skillIdx == 'Q'){
-            bulletsInfo.push_back(bullet_t{jinx[0].position + glm::vec3(-8.0, 11.0, 10.0), 0.0});
+        if(skillIdx == 'Q' && bulletIdx == 1 && turn == false){
+            bulletsInfo[bulletIdx].push_back(bullet_t{jinx[0].position + glm::vec3(-8.0, 11.0, 10.0), 0.0});
         }
+        else if(skillIdx == 'R' && bulletIdx == 0 && turn == false){
+            bulletsInfo[bulletIdx].push_back(bullet_t{jinx[0].position + glm::vec3(-5.5, 18.0, 10.0), 0.0});
+        }
+    }
+    if(skillIdx == 'R' && bulletIdx == 2 && ult_cnt > 0){
+        ult_cnt -= (timeCoef + 1e-5);
+        if(ult_cnt < 0){
+            // shoot R
+            ult_cnt = 0;
+            bulletsInfo[bulletIdx].push_back(bullet_t{jinx[0].position + glm::vec3(-6.0, 18.0, 12.0), 0.0});
+        }
+        cout << "ult_cnt: " << ult_cnt << endl;
+    }
+    if(skillIdx == 'W' && ult_cnt > 0){
+        ult_cnt -= (timeCoef + 1e-5);
+        if(ult_cnt < 0){
+            // shoot W
+            shootW = true;
+            w_cnt = w_cnt_start2;
+            ult_cnt = 0;
+        }
+        cout << "ult_cnt: " << ult_cnt << endl;
     }
 }
 
@@ -422,6 +471,8 @@ void render(){
     shaderPrograms[shaderProgramIndex]->set_uniform_value("view", view);
     shaderPrograms[shaderProgramIndex]->set_uniform_value("projection", projection);
     shaderPrograms[shaderProgramIndex]->set_uniform_value("skybox", 1);
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", false);
+    // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec4(1.0f)); 
     // light
     // shaderPrograms[shaderProgramIndex]->set_uniform_value("light.position", light.position);
     // shaderPrograms[shaderProgramIndex]->set_uniform_value("light.ambient", light.ambient);
@@ -455,31 +506,31 @@ void render(){
     jinxRightHand[idx].object->render();
 
     // bullets
-    for(int i = 0; i < bulletsInfo.size(); i++){
-        glm::mat4 bulletModel = glm::mat4(1.0f);
-        bulletModel = glm::translate(bulletModel, bulletsInfo[i].position);
-        bulletModel = glm::rotate(bulletModel, glm::radians(-90.0f), glm::vec3(0.0, 1.0, 0.0));
-        bulletModel = glm::scale(bulletModel, glm::vec3(50.0f));
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("model", bulletModel);
+    for(int j=0; j<3; j++){  // 0: silver, 1: yellow, 2: rocket(R)
+        for(int i = 0; i < bulletsInfo[j].size(); i++){
+            glm::mat4 bulletModel = glm::mat4(1.0f);
+            bulletModel = glm::translate(bulletModel, bulletsInfo[j][i].position);
+            bulletModel = glm::rotate(bulletModel, glm::radians(-90.0f), glm::vec3(0.0, 1.0, 0.0));
+            if(j == 1){
+                bulletModel = glm::scale(bulletModel, glm::vec3(50.0f));
+            }
+            if(j == 2){
+                bulletModel = glm::rotate(bulletModel, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+                bulletModel = glm::scale(bulletModel, glm::vec3(0.5f));
+            }
+                
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("model", bulletModel);
 
-        if (bulletsInfo[i].explodeTime > 0.0) {
-            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", bulletsInfo[i].explodeTime);
-            bullet.object->render();
-        }
-        else {
-            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
-            bullet.object->render();
+            if (bulletsInfo[j][i].explodeTime > 0.0) {
+                shaderPrograms[shaderProgramIndex]->set_uniform_value("time", bulletsInfo[j][i].explodeTime);
+                bullet[j].object->render();
+            }
+            else {
+                shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
+                bullet[j].object->render();
+            }
         }
     }
-
-    // Render a cube at currentLook position
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 redCubeModel = glm::mat4(1.0f);
-    redCubeModel = glm::translate(redCubeModel, currentLook);
-    redCubeModel = glm::scale(redCubeModel, glm::vec3(1.0f, 1.0f, 1.0f));
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("model", redCubeModel);
-    cube.object->render();
 
     // Render bombs
     for (const auto& bomb : bombs) {
@@ -489,6 +540,36 @@ void render(){
         shaderPrograms[shaderProgramIndex]->set_uniform_value("model", bombModel);
         bomb.object->render();
     }
+    
+    if(shootW){
+        float cur_len = w_cnt;
+        if(w_cnt > 10){
+            cur_len = 10;
+        }
+        // Render a cube at currentLook position
+        shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
+        // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec4(1.0f, 0.71f, 0.76f, 0.5f));  // // (255, 182, 193)
+        shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.71f, 0.76f));  // // (255, 182, 193)
+        glm::mat4 wCubeModel = glm::mat4(1.0f);
+        wCubeModel = glm::translate(wCubeModel, jinx[0].position + glm::vec3(-7.5, 14.5, 10.0) + glm::vec3(0.0, 0.0, 40 - cur_len*2));
+        wCubeModel = glm::scale(wCubeModel, glm::vec3(3.0f, 0.5f, cur_len*4));
+        shaderPrograms[shaderProgramIndex]->set_uniform_value("model", wCubeModel);
+        cube.object->render();
+        w_cnt -= timeCoef * 1;
+        if(w_cnt < 0){
+            shootW = false;
+        }
+    }
+
+    // Render a cube at currentLook position
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
+    // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 redCubeModel = glm::mat4(1.0f);
+    redCubeModel = glm::translate(redCubeModel, currentLook);
+    redCubeModel = glm::scale(redCubeModel, glm::vec3(1.0f, 1.0f, 1.0f));
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("model", redCubeModel);
+    cube.object->render();
 
     shaderPrograms[shaderProgramIndex]->release();
 
@@ -575,17 +656,28 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     //     shaderProgramIndex = 1;
 
     if (key == GLFW_KEY_Q && (action == GLFW_REPEAT || action == GLFW_PRESS)){
-        skillIdx = 'Q';
+        if(skillIdx == 'Q'){
+            skillIdx = 'R';
+            bulletIdx = 0;
+        }
+        else{
+            skillIdx = 'Q';
+            bulletIdx = 1;
+        }
         turn = true;
+        inverse = 1;
         handRoate = 0.0f;
     }
     if (key == GLFW_KEY_W && (action == GLFW_REPEAT || action == GLFW_PRESS)){
         skillIdx = 'W';
         turn = true;
+        inverse = 1;
         handRoate = 0.0f;
+        ult_cnt = w_cnt_start1;
     }
     if (key == GLFW_KEY_E && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
         turn = true;
+        inverse = -1;
         handRoate = 0.0f;
         std::vector<glm::vec3> velocities = {
             glm::vec3(0.0f, 20.0f, 10.0f),
@@ -604,8 +696,11 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     }
     if (key == GLFW_KEY_R && (action == GLFW_REPEAT || action == GLFW_PRESS)){
         skillIdx = 'R';
+        bulletIdx = 2;
         turn = true;
+        inverse = 1;
         handRoate = 0.0f;
+        ult_cnt = ult_cnt_start;
     }
 
     if (key == GLFW_KEY_A && (action == GLFW_REPEAT || action == GLFW_PRESS))
