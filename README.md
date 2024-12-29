@@ -29,7 +29,7 @@ The final project for Introduction of Computer Graphic in NYCU
 ### 動畫
 | 按鍵 | 效果 |
 | :-: | --- |
-| T | |
+| T | 子彈時間 |
 | space | 暫停所有動作 |
 
 ### 視角
