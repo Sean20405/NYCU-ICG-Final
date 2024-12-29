@@ -39,6 +39,7 @@ struct camera_t{
     glm::vec3 position;
     glm::vec3 up;
     float rotationY;
+    float rotationX;
     glm::vec3 look;
 };
 
@@ -133,6 +134,7 @@ void camera_setup(){
     camera.position = glm::vec3(0.0, 20.0, 100.0);
     // camera.position = glm::vec3(0.0, 10.0, 100.0);
     camera.up = glm::vec3(0.0, 1.0, 0.0);
+    camera.rotationX = 0;
     camera.rotationY = 0;
     camera.look = glm::vec3(0.0f, 10.0f, 0.0f);
 }
@@ -413,13 +415,19 @@ void update(){
     jinxRightHandModel = glm::translate(jinxRightHandModel, glm::vec3(0.0, -delta_y, 0.0));
 
     camera.rotationY = (camera.rotationY > 360.0) ? 0.0 : camera.rotationY;
+    camera.rotationX = (camera.rotationX > 360.0) ? 0.0 : camera.rotationX;
     cameraModel = glm::mat4(1.0f);
     cameraModel = glm::translate(cameraModel, currentLook);
     cameraModel = glm::rotate(cameraModel, glm::radians(camera.rotationY), camera.up);
+    // glm::vec3 left = glm::normalize(glm::cross(camera.up, currentLook - glm::vec3(cameraModel[3])));
+    glm::vec3 left = glm::normalize(glm::cross(camera.up, currentLook - camera.position));
+    cout << "camera.up: " << camera.up.x << " " << camera.up.y << " " << camera.up.z << endl;
+    cout << "currentLook: " << currentLook.x << " " << currentLook.y << " " << currentLook.z << endl;
+    cout << "left: " << left.x << " " << left.y << " " << left.z << endl;
+    cameraModel = glm::rotate(cameraModel, glm::radians(camera.rotationX), left);
     cameraModel = glm::translate(cameraModel, -currentLook);
     cameraModel = glm::translate(cameraModel, camera.position);
 
-    // cout << "bullet size: " << bulletsInfo[0].size() << " " << bulletsInfo[1].size() << endl;
     // bullets
     for(int j=0; j<3; j++){  // 0: silver, 1: yellow
         for(int i = 0; i < bulletsInfo[j].size(); i++){
@@ -448,6 +456,8 @@ void update(){
             bulletsInfo[bulletIdx].push_back(bullet_t{jinx[0].position + glm::vec3(-5.5, 18.0, 10.0), 0.0});
         }
     }
+
+    // R
     if(skillIdx == 'R' && bulletIdx == 2 && ult_cnt > 0){
         ult_cnt -= (timeCoef + 1e-5);
         if(ult_cnt < 0){
@@ -457,6 +467,8 @@ void update(){
         }
         cout << "ult_cnt: " << ult_cnt << endl;
     }
+
+    // W
     if(skillIdx == 'W' && ult_cnt > 0){
         ult_cnt -= (timeCoef + 1e-5);
         if(ult_cnt < 0){
@@ -471,7 +483,6 @@ void update(){
 
 
 void render(){
-
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -638,7 +649,7 @@ int main() {
 #endif
 
     // glfw window creation
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "HW4 - Group 1", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Champion Spotlight", NULL, NULL);
     if (window == NULL) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -746,14 +757,13 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         shootTime = !shootTime;
     if (key == GLFW_KEY_SPACE && (action == GLFW_REPEAT || action == GLFW_PRESS))
         stop = !stop;
-
-    // camera movement
-    glm::vec3 front = glm::normalize(currentLook - camera.position);
-    if (key == GLFW_KEY_UP && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        camera.position += cameraSpeed * front; // 向前移動
-    if (key == GLFW_KEY_DOWN && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        camera.position -= cameraSpeed * front; // 向後移動
     
+    // camera movement
+    // Rotate
+    if (key == GLFW_KEY_UP && (action == GLFW_REPEAT || action == GLFW_PRESS))
+        camera.rotationX += 10.0f; // 向上旋轉
+    if (key == GLFW_KEY_DOWN && (action == GLFW_REPEAT || action == GLFW_PRESS))
+        camera.rotationX -= 10.0f; // 向下旋轉
     if (key == GLFW_KEY_LEFT && (action == GLFW_REPEAT || action == GLFW_PRESS))
         camera.rotationY -= 10.0f; // 向左旋轉
     if (key == GLFW_KEY_RIGHT && (action == GLFW_REPEAT || action == GLFW_PRESS))
@@ -765,21 +775,32 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     if (key == GLFW_KEY_COMMA && (action == GLFW_REPEAT || action == GLFW_PRESS)){
         camera.position = glm::vec3(cameraModel[3]) + cameraSpeed * left;
         camera.rotationY = 0;
+        camera.rotationX = 0;
         currentLook += cameraSpeed * left;
     }
     if (key == GLFW_KEY_SLASH && (action == GLFW_REPEAT || action == GLFW_PRESS)){
         camera.position = glm::vec3(cameraModel[3]) - cameraSpeed * left;
         camera.rotationY = 0;
+        camera.rotationX = 0;
         currentLook -= cameraSpeed * left;
     }
+    // 放大縮小
+    glm::vec3 front = glm::normalize(currentLook - camera.position);
+    if (key == GLFW_KEY_L && (action == GLFW_REPEAT || action == GLFW_PRESS))
+        camera.position += cameraSpeed * front; // 向前移動
+    if (key == GLFW_KEY_PERIOD && (action == GLFW_REPEAT || action == GLFW_PRESS))
+        camera.position -= cameraSpeed * front; // 向後移動
+    // 回歸初始位置
     if (key == GLFW_KEY_P && (action == GLFW_REPEAT || action == GLFW_PRESS)){
         currentLook = camera.look;
         camera.position = glm::vec3(0.0, 20.0, 100.0);
         camera.rotationY = 0;
+        camera.rotationX = 0;
     }
-    cout << "currentLook: " << currentLook.x << " " << currentLook.y << " " << currentLook.z << endl;
-    cout << "camera.position: " << camera.position.x << " " << camera.position.y << " " << camera.position.z << endl;
-    cout << "camera.rotationY: " << camera.rotationY << endl;
+    // cout << "currentLook: " << currentLook.x << " " << currentLook.y << " " << currentLook.z << endl;
+    // cout << "camera.position: " << camera.position.x << " " << camera.position.y << " " << camera.position.z << endl;
+    // cout << "camera.rotationY: " << camera.rotationY << endl;
+    cout << "camera.rotationX: " << camera.rotationX << endl;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
