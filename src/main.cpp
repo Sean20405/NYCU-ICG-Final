@@ -95,29 +95,38 @@ glm::mat4 jinxRightHandModel;
 // camera movement
 float cameraSpeed = 2.0f;
 
-// jinx
-float jinxMoveSpeed = 0.5;
-float jinxMove = jinxMoveSpeed;
+// default
 char skillIdx = 'Q';
 bool shootTime = false;
-float timeCoef= 1.0f;
-float time_threshold = 0.1f;
-float deltaTime = 0.03f;
-bool stop = false;
 bool turn = false;
+bool stop = false;
 float handRoate = 0.0f;
-int handRoateCoef = 30;
 bool fire = false;
 vector<vector<bullet_t>> bulletsInfo;  // (time, position)
 glm::vec3 currentLook;
 int inverse = 1;
-int bulletIdx = 1;  // 0: silver, 1: yellow
+int bulletIdx = 1;  // 0: silver, 1: yellow, 2: R
 float ult_cnt = 0;
-int ult_cnt_start = 20;
 bool shootW = false;
 float w_cnt = 0;
+
+// jinx
+float jinxMoveSpeed = 0.5;
+float jinxMove = jinxMoveSpeed;
+
+// time
+float timeCoef= 1.0f;
+float time_threshold = 0.1f;
+float deltaTime = 0.03f;
+int handRoateCoef = 30;
+
+// W, R 要在什麼時候開始發射、停止
+int ult_cnt_start = 20;
 int w_cnt_start1 = 13;
 int w_cnt_start2 = 30;
+
+// E (Bomb)
+// 丟出去時 velocity & 移動的重力加速度
 glm::vec3 acclerateE = glm::vec3(0.0f, -50.0f, 0.0f);
 float velX = 8.0f;
 float velY = 20.0f;
@@ -127,8 +136,7 @@ std::vector<glm::vec3> velocitiesE = {
     glm::vec3(velX, velY, velZ),
     glm::vec3(-velX, velY, velZ)
 };
-
-// E (Bomb)
+// 掉到地板後
 float e_explosion_countdown = 2;  // After this, E will start to explode
 float e_explosion_time = 2.5;     // After this, E will stop exploding and disappear
 float num_turns = 1.5;            // Number of turns of the bomb before exploding
@@ -141,7 +149,6 @@ float num_jumps = 1.5;            // Number of jumps of the bomb before explodin
 
 void camera_setup(){
     camera.position = glm::vec3(0.0, 20.0, 100.0);
-    // camera.position = glm::vec3(0.0, 10.0, 100.0);
     camera.up = glm::vec3(0.0, 1.0, 0.0);
     camera.rotationX = 0;
     camera.rotationY = 0;
@@ -165,7 +172,6 @@ void material_setup(){
 
 
 void model_setup(){
-
 // Load the object and texture for each model here 
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -252,7 +258,6 @@ void model_setup(){
 
 
 void shader_setup(){
-
 // Setup the shader program for each shading method
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -284,7 +289,6 @@ void shader_setup(){
 
 
 void cubemap_setup(){
-
 // Setup all the necessary things for cubemap rendering
 // Including: cubemap texture, shader program, VAO, VBO
 
@@ -392,7 +396,7 @@ void update(){
         timeCoef += deltaTime;
     }
 
-    // Jinx
+    // Jinx 上下移動
     // float range = 0.1;
     // if(jinx[0].position.y > range){
     //     jinxMove = -jinxMoveSpeed;
@@ -501,19 +505,6 @@ void render(){
     shaderPrograms[shaderProgramIndex]->set_uniform_value("projection", projection);
     shaderPrograms[shaderProgramIndex]->set_uniform_value("skybox", 1);
     shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", false);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec4(1.0f)); 
-    // light
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("light.position", light.position);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("light.ambient", light.ambient);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("light.diffuse", light.diffuse);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("light.specular", light.specular);
-    // material
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("material.ambient", material.ambient);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("material.diffuse", material.diffuse);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("material.specular", material.specular);
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("material.gloss", material.gloss);
-    // camer pos
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("camera_pos", glm::vec3(cameraModel[3]));
 
     // Jinx
     int idx = 0;
@@ -595,17 +586,35 @@ void render(){
     }
     
     if(shootW){
-        float cur_len = w_cnt;
-        if(w_cnt > 10){
-            cur_len = 10;
-        }
-        // Render a cube at currentLook position
+        // shoot laser
+        // float cur_len = w_cnt;
+        // if(w_cnt > 10){
+        //     cur_len = 10;
+        // }
+        // shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
+        // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.71f, 0.76f));  // // (255, 182, 193)
+        // glm::mat4 wCubeModel = glm::mat4(1.0f);
+        // wCubeModel = glm::translate(wCubeModel, jinx[0].position + glm::vec3(-7.5, 14.5, 10.0) + glm::vec3(0.0, 0.0, 40 - cur_len*2));
+        // wCubeModel = glm::scale(wCubeModel, glm::vec3(3.0f, 0.5f, cur_len*4));
+        // shaderPrograms[shaderProgramIndex]->set_uniform_value("model", wCubeModel);
+        // cube.object->render();
+        // w_cnt -= timeCoef * 1 * !stop;
+        // if(w_cnt < 0){
+        //     shootW = false;
+        // }
+        
+        // laser explosion
+        float cur_len = 10;
         shaderPrograms[shaderProgramIndex]->set_uniform_value("noTexture", true);
-        // shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec4(1.0f, 0.71f, 0.76f, 0.5f));  // // (255, 182, 193)
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.71f, 0.76f));  // // (255, 182, 193)
+        shaderPrograms[shaderProgramIndex]->set_uniform_value("Color", glm::vec3(1.0f, 0.71f, 0.76f));
         glm::mat4 wCubeModel = glm::mat4(1.0f);
         wCubeModel = glm::translate(wCubeModel, jinx[0].position + glm::vec3(-7.5, 14.5, 10.0) + glm::vec3(0.0, 0.0, 40 - cur_len*2));
         wCubeModel = glm::scale(wCubeModel, glm::vec3(3.0f, 0.5f, cur_len*4));
+        if(w_cnt < 5){
+            float explodeW = (5 - w_cnt) / 12;
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", explodeW);
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("aExplosionColor", glm::vec3(1.0f));
+        }
         shaderPrograms[shaderProgramIndex]->set_uniform_value("model", wCubeModel);
         cube.object->render();
         w_cnt -= timeCoef * 1 * !stop;
@@ -655,7 +664,7 @@ int main() {
 #endif
 
     // glfw window creation
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Champion Spotlight", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Champion Spotlight of Jinx", NULL, NULL);
     if (window == NULL) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -693,7 +702,6 @@ int main() {
 
 // Add key callback
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-
     // The action is one of GLFW_PRESS, GLFW_REPEAT or GLFW_RELEASE.
     // Events with GLFW_PRESS and GLFW_RELEASE actions are emitted for every key press.
     // Most keys will also emit events with GLFW_REPEAT actions while a key is held down.
@@ -701,12 +709,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    // // shader program selection
-    // if (key == GLFW_KEY_0 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-    //     shaderProgramIndex = 0;
-    // if (key == GLFW_KEY_1 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-    //     shaderProgramIndex = 1;
 
     if(!stop){
         if (key == GLFW_KEY_Q && (action == GLFW_REPEAT || action == GLFW_PRESS)){
