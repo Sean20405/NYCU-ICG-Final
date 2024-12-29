@@ -596,6 +596,7 @@ void render(){
         // glm::mat4 wCubeModel = glm::mat4(1.0f);
         // wCubeModel = glm::translate(wCubeModel, jinx[0].position + glm::vec3(-7.5, 14.5, 10.0) + glm::vec3(0.0, 0.0, 40 - cur_len*2));
         // wCubeModel = glm::scale(wCubeModel, glm::vec3(3.0f, 0.5f, cur_len*4));
+        // shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
         // shaderPrograms[shaderProgramIndex]->set_uniform_value("model", wCubeModel);
         // cube.object->render();
         // w_cnt -= timeCoef * 1 * !stop;
@@ -614,6 +615,9 @@ void render(){
             float explodeW = (5 - w_cnt) / 12;
             shaderPrograms[shaderProgramIndex]->set_uniform_value("time", explodeW);
             shaderPrograms[shaderProgramIndex]->set_uniform_value("aExplosionColor", glm::vec3(1.0f));
+        }
+        else{
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("time", 0.0f);
         }
         shaderPrograms[shaderProgramIndex]->set_uniform_value("model", wCubeModel);
         cube.object->render();
