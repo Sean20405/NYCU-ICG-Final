@@ -29,6 +29,7 @@ The final project for Introduction of Computer Graphic in NYCU
 ### Run with command line
 ```bash
 git clone --recursive https://github.com/Sean20405/NYCU-ICG-Final
+cd NYCU-ICG-Final
 cmake -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -SNYCU-ICG-Final -BNYCU-ICG-Final/build -G Ninja
 cmake --build build
 cd build/src
