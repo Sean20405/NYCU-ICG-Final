@@ -11,7 +11,7 @@ The final project for Introduction of Computer Graphic in NYCU
 ### Requirements
 - G++
 - CMake
-- [Optional, but recommanded] VS Code
+- [Optional, but recommanded] VS Code (with CMake Tools extension)
 
 ### Run with VS Code
 > [!WARNING]
