@@ -119,12 +119,12 @@ float w_cnt = 0;
 int w_cnt_start1 = 13;
 int w_cnt_start2 = 30;
 
-// E (bomb)
+// E (Bomb)
 float e_explosion_countdown = 2;  // After this, E will start to explode
-float e_explosion_time = 2.5;  // After this, E will stop exploding and disappear
-float num_turns = 1.5;  // Number of turns of the bomb before exploding
-float jump_height = 2.0;  // Height of the bomb when it jumps
-float num_jumps = 1.5;  // Number of jumps of the bomb before exploding
+float e_explosion_time = 2.5;     // After this, E will stop exploding and disappear
+float num_turns = 1.5;            // Number of turns of the bomb before exploding
+float jump_height = 2.0;          // Height of the bomb when it jumps
+float num_jumps = 1.5;            // Number of jumps of the bomb before exploding
 
 //////////////////////////////////////////////////////////////////////////
 // Parameter setup, 
@@ -364,7 +364,7 @@ void update(){
             bombs[i].velocity = glm::vec3(0.0f);
             bombs[i].acceleration = glm::vec3(0.0f);
             bombs[i].position.y = 0.0f;
-            bombs[i].explodeTime += deltaTime;
+            bombs[i].explodeTime += deltaTime * timeCoef;
             
             if (bombs[i].explodeTime > e_explosion_time) {  // Delete the bomb after this time
                 bombs.erase(bombs.begin() + i);
@@ -433,7 +433,7 @@ void update(){
         for(int i = 0; i < bulletsInfo[j].size(); i++){
             // Stop moving, explode
             if(bulletsInfo[j][i].position.z > 50.0){
-                bulletsInfo[j][i].explodeTime += deltaTime;
+                bulletsInfo[j][i].explodeTime += deltaTime * timeCoef;
                 cout << bulletsInfo[j][i].explodeTime << endl;
                 if (bulletsInfo[j][i].explodeTime > 0.5) {  // Delete the bullet after exploding for 0.5s
                     bulletsInfo[j].erase(bulletsInfo[j].begin() + i);
