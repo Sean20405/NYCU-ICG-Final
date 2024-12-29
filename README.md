@@ -26,6 +26,9 @@ The final project for Introduction of Computer Graphic in NYCU
 - Setting Compiler in VS Code
 - Press the Run button `▷` in the bottom left corner in VS Code
 
+## 如何執行
+Demo Video : https://youtu.be/SIGnUQT0NhY
+
 ## 操作
 ### 技能
 | 按鍵 | 效果 |
