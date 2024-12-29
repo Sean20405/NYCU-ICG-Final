@@ -43,6 +43,5 @@ The final project for Introduction of Computer Graphic in NYCU
 | slash `/` | 視角向右平移 |
 | L | 視角向前平移 |
 | period `.` | 視角向後平移 |
-　也就是鍵盤上的這些按鍵
-![alt text](image.png)
 | P | 將視角恢復到初始位置 |
+| l , . / | ![alt text](image.png) |
