@@ -44,4 +44,8 @@ The final project for Introduction of Computer Graphic in NYCU
 | L | 視角向前平移 |
 | period `.` | 視角向後平移 |
 | P | 將視角恢復到初始位置 |
+
+### 鍵盤對應
+| 按鍵 | 位置 |
+| :-: | --- |
 | l , . / | ![alt text](image.png) |
