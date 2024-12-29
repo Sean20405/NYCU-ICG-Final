@@ -13,7 +13,7 @@ The final project for Introduction of Computer Graphic in NYCU
 - CMake
 - [Optional, but recommanded] VS Code
 
-### Run with VS Code (must have CMake Tools extension)
+### Run with VS Code
 > [!WARNING]
 >
 > Your VS Code must have CMake Tools extension already
